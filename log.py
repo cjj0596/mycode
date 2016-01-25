@@ -2,24 +2,20 @@
 import re
 import time
 import linecache
-<<<<<<< HEAD
 from collections import Counter
 
-f=open("/media/sf_virtual_share/test_log.log",'r')
-#print f.readline()
+f=open("test_log.log",'r')
 first_time=re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}',f.readline()).group(0)
 ftime=time.mktime(time.strptime(first_time,'%Y-%m-%d %H:%M:%S'))
 
-end=linecache.getline("/media/sf_virtual_share/test_log.log",len(open("/media/sf_virtual_share/test_log.log",'r').readlines()))
+end=linecache.getline("test_log.log",len(open("test_log.log",'r').readlines()))
 end_time=re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}',end).group(0)
 etime=time.mktime(time.strptime(end_time,'%Y-%m-%d %H:%M:%S'))
 
-#print end,end_time,etime
 ctime=ftime+10*60
-#print ctime
 f.close()
 
-f=open("/media/sf_virtual_share/test_log.log","r")
+f=open("test_log.log","r")
 i = 0
 list1=[]
 print "------------------------------------------------"
@@ -33,11 +29,9 @@ for line in f:
            i += 1
            command=re.search(r'\t([\d\w\W]*)\.[\w\s]',line).group(0)
            if (command != ''):
-              #print command
 	      list1.append(command)
        elif (atime2 > ctime and (ctime+10*60) <= etime):
 	   result=dict(Counter(list1))
-	  # print result
 	   for k in result:
                print result[k],k
            print "------------------------------------------------"
@@ -49,7 +43,6 @@ for line in f:
            else:
                ctime+=10*60
            i += 1
-          # print i,time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(atime2)),time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(ctime))
            print "data from " + atime + " to " + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(ctime))
 	   command=re.search(r'\t([\d\w\W]*)\.[\w\s]',line).group(0)
            if (command != ''):
@@ -64,7 +57,6 @@ for line in f:
 	   result={}
            i +=1
            ctime=etime
-          # print i,time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(atime2)),time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(ctime))
 	   print "data from " + atime + " to " + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(ctime))
            command=re.search(r'\t([\d\w\W]*)\.[\w\s]',line).group(0)
            if (command != ''):
@@ -76,34 +68,5 @@ for k in result:
     print result[k],k
 print "------------------------------------------------"           
 print "Done!"
-=======
-
-f=open("/media/sf_virtual_share/ab.log","r")
-first_time=re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}',f.readline()).group(0)
-ftime=time.mktime(time.strptime(first_time,'%Y-%m-%d %H:%M:%S'))
-ftime+=10*60
-x = time.localtime(ftime)
-print time.strftime('%Y-%m-%d %H:%M:%S',x)
-end=linecache.getline("/media/sf_virtual_share/ab.log",len(open("/media/sf_virtual_share/ab.log",'r').readlines()))
-end_time=re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}',end).group(0)
-etime=time.mktime(time.strptime(end_time,'%Y-%m-%d %H:%M:%S'))
-
-list=[]
-for line in f:
-    rtime=re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}',line).group(0)
-    ctime=ftime=time.mktime(time.strptime(rtime,'%Y-%m-%d %H:%M:%S'))
-    if ctime <= ftime :
-         command=re.search(r'\t([\d\w\W]*)\s\s',line).group(0)
-         list.append(command)
-    else:
-         break;
-
-
-print list
-
-
-
-
->>>>>>> 7631728c2a64386ed171b41e459699dc79edb195
 
 f.close()
