@@ -26,6 +26,10 @@ echo "data from ${ztime} to ${ftime}"
 echo "Done!"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> code_test
+=======
+
+>>>>>>> 7631728c2a64386ed171b41e459699dc79edb195
