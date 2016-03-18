@@ -1,0 +1,3 @@
+- name: Delete Zabbix compression Software In Redhat Client
+  shell: rm -rf /tmp/zabbix-{{ zabbix_version }}.tar.gz
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6

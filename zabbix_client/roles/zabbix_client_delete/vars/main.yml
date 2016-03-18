@@ -1,0 +1,7 @@
+zabbix_dir: /usr/local      #客户端安全目录
+zabbix_version: 2.0.6      #客户端软件版本
+zabbix_user: zabbix       #客户端用户
+zabbix_port: 10050        #客户端的端口
+zabbix_server_ip: 127.0.0.1 # zabbix_server的ip
+host: 127.0.0.1
+user: root

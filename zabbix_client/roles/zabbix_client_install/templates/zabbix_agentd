@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# chkconfig: - 85 15
+# description: Zabbix client script.
+# processname: Zabbix
+. /etc/profile 
+SERVICE="Zabbix agent"
+DAEMON={{ zabbix_dir }}/zabbix-{{ zabbix_version}}/zabbix_agentd
+PIDFILE=/tmp/zabbix_agentd.pid
+CONFIG={{ zabbix_dir }}/zabbix-{{ zabbix_version}}/conf/zabbix_agentd.conf
+zabbix_agent_status=`ps aux|grep zabbix_agentd.conf|grep -v grep|wc -l`
+zabbix_agent_pid=`ps aux|grep zabbix_agentd|grep -v grep|awk 'NR==1{print $2}'`
+# Source function library.
+. /etc/rc.d/init.d/functions
+# Source networking configuration.
+. /etc/sysconfig/network
+function check()
+{
+if [ $? -eq 0 ];then
+  action $"Operating is:" /bin/true
+else
+  action $"Operating is:" /bin/false
+fi
+}
+case $1 in
+ 'start')
+  if [ -x ${DAEMON} ]
+  then
+   $DAEMON -c $CONFIG
+   # Error checking here would be good...
+   echo "${SERVICE} started."
+  else
+   echo "Can't find file ${DAEMON}."
+   echo "${SERVICE} NOT started."
+  fi
+  check
+ ;;
+ 
+ 'stop')
+  if [ -s ${PIDFILE} ]
+  then
+   if kill `cat ${PIDFILE}` >/dev/null 2>&1
+   then
+    echo "${SERVICE} terminated."
+    rm -f ${PIDFILE}
+   fi
+  fi
+  check
+ ;;
+ 'restart')
+  /bin/bash $0 stop
+  sleep 5
+  /bin/bash $0 start
+ ;;
+ 
+ 'status')
+  if [ $zabbix_agent_status -ne 0 ];then
+    echo "Zabbix Agentd is running ($zabbix_agent_pid)"
+  else
+    echo "Zabbix Agentd is not running!"
+  fi
+  ;;
+ 
+*)
+  echo "Usage: $0 {start|stop|status|restart}"
+;;
+ 
+esac
+exit 0

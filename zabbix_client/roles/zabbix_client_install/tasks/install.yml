@@ -1,0 +1,17 @@
+- name: Modify Zabbix Dir Permission In Redhat Client
+  file: path={{ zabbix_dir }}/zabbix-{{ zabbix_version }} owner={{ zabbix_user }} group={{ zabbix_user }} mode=0755
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Check Zabbix User Sudo Permission In Redhat Client
+  shell: grep "{{ zabbix_user }}" /etc/sudoers|wc -l
+  register: zabbix_sudoer
+  ignore_errors: True
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Give Sudo Permission To Zabbix User In Redhat Client
+  shell: echo "{{ zabbix_user }} ALL=(root) NOPASSWD:/bin/netstat, /usr/bin/omreport" >> /etc/sudoers
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6 and zabbix_sudoer|int ==0
+- name: Start Zabbix Service In Redhat Client
+  shell: /etc/init.d/zabbix_agentd start
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Add Boot Start Zabbix Service In Redhat Client
+  shell: chkconfig --level 345 zabbix_agentd on
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
