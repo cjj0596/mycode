@@ -1,0 +1,32 @@
+- name: Stop Exist Zabbix Client Service In Redhat Client
+  shell: ps -ef|grep zabbix|grep -v zabbix_client_install|grep -v grep|awk '{print $2}'|xargs kill -9 >>/dev/null 2>&1
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Delete Exist Zabbix Client Dir In Redhat Client
+  shell: rm -rf {{ zabbix_dir }}/zabbix-{{ zabbix_version }}
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Install Base Require Software In Redhat Client
+  yum: name={{ item }} state=latest
+  with_items:
+   - telnet
+   - dmidecode
+   - tar
+- name: Create Zabbix User In Redhat Client
+  user: name={{ zabbix_user }} state=present createhome=no shell=/sbin/nologin
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Copy Zabbix Client Software To Redhat Client
+  copy: src=zabbix-{{ zabbix_version }}.tar.gz dest=/tmp/zabbix-{{ zabbix_version }}.tar.gz owner=root group=root
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Uncompression Zabbix Client Software To Redhat Client
+  shell: tar zxf /tmp/zabbix-{{ zabbix_version }}.tar.gz -C {{ zabbix_dir }}/
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Copy Zabbix Start Script To Redhat Client
+  template: src=zabbix_agentd dest=/etc/init.d/zabbix_agentd owner=root group=root mode=0755
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Copy Zabbix Start Daemon To Redhat Client
+  copy: src=sbin/zabbix_agentd dest={{ zabbix_dir }}/zabbix-{{ zabbix_version }}/zabbix_agentd owner={{ zabbix_user }} group={{ zabbix_user }} mode=0755
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Copy Zabbix Config To Redhat Client
+  template: src=zabbix_agentd.conf dest={{ zabbix_dir }}/zabbix-{{ zabbix_version }}/conf/zabbix_agentd.conf owner={{ zabbix_user }} group={{ zabbix_user }} mode=0644
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6

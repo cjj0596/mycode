@@ -1,0 +1,25 @@
+- name: Stop Exist Zabbix Client Service In Redhat Client
+  shell: ps -ef|grep zabbix|grep -v zabbix_client|grep -v grep|awk '    {print $2}'|xargs kill -9 >>/dev/null 2>&1
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Delete Boot Start Zabbix Service In Redhat Client
+  shell: chkconfig --del zabbix_agentd
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Delete Zabbix User In Redhat Client
+  user: name={{ zabbix_user }} state=absent remove=yes
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Delete Zabbix Dir In Redhat Client
+  shell: rm -rf {{ zabbix_dir }}/zabbix-{{ zabbix_version }}
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Delete Zabbix Start Script To Redhat Client
+  shell: rm -rf /etc/init.d/zabbix_agentd
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Check Zabbix User Sudo Permission In Redhat Client
+  shell: grep "{{ zabbix_user }}" /etc/sudoers|wc -l
+  register: zabbix_sudoer
+  ignore_errors: True
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6
+- name: Delete Sudo Permission To Zabbix User In Redhat Client
+  shell: sed -i /{{ zabbix_user }}/d /etc/sudoers
+  when: ansible_os_family == "RedHat" and ansible_lsb.major_release|int == 6 and zabbix_sudoer|int ==0
