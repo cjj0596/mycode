@@ -1,88 +1,117 @@
 #!/bin/bash
-#desc: pxe install centos5.4 config script
+#desc: pxe install centos6.4 or centos7.0 config script
 #date: 2016-03-23
-
 IP_DHCP=`ifconfig|grep "inet addr:"|grep -v "127.0.0.1"|cut -d: -f2|awk '{print $1}'|cut -d. -f1-3`
 IP_ADDR=${IP_DHCP}.0
-IP_MASK="255.255.255.0"
+IP_MASK=`ifconfig|grep Mask|grep -v 127.0.0.1|cut -d: -f4`
 IP_LOCAL=`ifconfig|grep "inet addr:"|grep -v "127.0.0.1"|cut -d: -f2|awk '{print $1}'`
 
-yum install -y xinetd dhcp tftp-server system-config-kickstart
-
-if [ -e /etc/xinetd.d/tftp ]; then
- /bin/sed -i '14 s/yes/no/' /etc/xinetd.d/tftp
+#check dhcp
+rpm -qa|grep dhcp >/dev/null 2>&1
+if [ $? -eq 0 ]
+then 
+    echo "dhcp already exist."
 else
- echo "tftp-server no install "
- exit 0
+    yum install -y dhcp
 fi
 
 #dhcp config file
-cat > /etc/dhcpd.conf <<end..
+cat > /etc/dhcp/dhcpd.conf <<end..
 ddns-update-style interim; 
 ignore client-updates; 
 authoritative;
 allow booting; 
 allow bootp; 
-subnet $IP_ADDR netmask $IP_MASK {
+subnet ${IP_ADDR} netmask ${IP_MASK} {
     range ${IP_DHCP}.1 ${IP_DHCP}.255; 
     option routers ${IP_DHCP}.1; 
-    option subnet-mask 255.255.255.0;  
-    option domain-name-servers 203.103.24.68;
+    option subnet-mask ${IP_MASK};  
     default-lease-time 21600;
     max-lease-time 43200; 
-    next-server $IP_LOCAL;
+    next-server ${IP_LOCAL};
     filename "/pxelinux.0"; 
 } 
 end..
 
+#check tftp
+rpm -qa|grep tftp >/dev/null 2>&1
+if [ $? -eq 0 ]
+then
+    echo "tftp already exist."
+else 
+    yum install -y tftp tftp-server
+fi
+
+#check system-config-kickstart
+rpm -qa|grep tftp >/dev/null 2>&1
+if [ $? -eq 0 ]
+then
+    echo "kickstart already exist."
+else 
+    yum install -y system-config-kickstart
+fi
+
+#check httpd 
+rpm -qa|grep httpd >/dev/null 2>&1
+if [ $? -eq 0 ]
+then
+    echo "httpd already exist."
+else
+    yum install -y httpd
+fi
+
 #config pxe boot file
-#mount /media/CentOS_6.4_Final /var/www/html/centos/6/x84_64
-mkdir -p /tftpboot 
+mkdir -p /tftpboot
 cp /usr/share/syslinux/pxelinux.0 /tftpboot
-cp /media/CentOS_6.4_Final/images/pxeboot/initrd.img  /tftpboot
-cp /media/CentOS_6.4_Final/images/pxeboot/vmlinuz  /tftpboot
+#config centos6.4 boot file
+cp /media/CentOS_6.4_Final/images/pxeboot/initrd.img  /tftpboot/initrd6.4.img
+cp /media/CentOS_6.4_Final/images/pxeboot/vmlinuz  /tftpboot/vmlinuz6.4
 cp /media/CentOS_6.4_Final/isolinux/*.msg  /tftpboot
 
-mkdir -p /tftpboot/pxelinux.cfg 
+#config centos7 boot file
+cp /media/CentOS\ 7\ x86_64/images/pxeboot/initrd.img  /tftpboot/initrd7.0.img
+cp /media/CentOS\ 7\ x86_64/images/pxeboot/vmlinuz  /tftpboot/vmlinuz7.0
+
+#modify boot.msg
+sed -i 's/^.*Press.*$/ -  To install CentOS-6.4 , please input centos6.4 then press ^O01<ENTER>^O07 to begin the installation process.\n\n\n -  To install CentOS-7.0 , please input centos7.0 then press ^O01<ENTER>^O07 to begin the installation process./g' /tftpboot/boot.msg
 
 #pxe boot file
+mkdir -p /tftpboot/pxelinux.cfg
 cat > /tftpboot/pxelinux.cfg/default <<end..
-default linux       /*自动进入linux选项进行安装*/
+default centos6.4   /*自动进入centos6.4选项进行安装*/
 prompt 1
-timeout 30
+timeout 300
 display boot.msg
 F1 boot.msg
-F2 options.msg
-F3 general.msg
-F4 param.msg
-F5 rescue.msg
-F7 snake.msg
-label local
-localboot 0
-label linux
-kernel vmlinuz
-append ks=http://${IP_LOCAL}/ks.cfg initrd=initrd.img devfs=nomount ramdisk_size=9216
-label text
-kernel vmlinuz
-append initrd=initrd.img text devfs=nomount ramdisk_size=9216
-label expert
-kernel vmlinuz
-append expert initrd=initrd.img devfs=nomount ramdisk_size=9216
-label ks
-kernel vmlinuz
-append ks initrd=initrd.img devfs=nomount ramdisk_size=9216
-label nofb
-kernel vmlinuz
-append initrd=initrd.img devfs=nomount nofb ramdisk_size=9216
-label lowres
-kernel vmlinuz
-append initrd=initrd.img lowres devfs=nomount ramdisk_size=9216
-kernel vmlinuz
-
+label centos6.4
+  kernel vmlinuz6.4
+  append ks=http://${IP_LOCAL}/ks6.4.cfg initrd=initrd6.4.img
+label centos7.0
+  kernel vmlinuz7.0
+  append ks=http://${IP_LOCAL}/ks7.0.cfg initrd=initrd7.0.img
 end..
 
+#mount iso in httpd
+mount|grep "/var/www/html/centos/6/x86_64"
+if [ $? -eq 0 ]
+then
+    echo "CentOS 6.4 is ready."
+else
+    mkdir -p /var/www/html/centos/6/x86_64/
+    mount --bind /media/CentOS_6.4_Final /var/www/html/centos/6/x86_64/
+fi
+
+mount|grep "/var/www/html/centos/7/x86_64"
+if [ $? -eq 0 ]
+then
+    echo "CentOS 7.0 is ready."
+else
+    mkdir -p /var/www/html/centos/7/x86_64/
+    mount --bind /media/CentOS\ 7\ x86_64 /var/www/html/centos/7/x86_64/
+fi
+
+setenforce 0
+service iptables stop
 service httpd restart
 service xinetd restart
 service dhcpd restart
-
-system-config-kickstart &
